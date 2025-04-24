@@ -20,7 +20,7 @@ trainer = SFTTrainer(
     train_dataset=dataset,
     peft_config=peft_config,
     processing_class=processor,
-    data_collator=collate_fn,
+    data_collator=lambda examples: collate_fn(examples, processor),
 )
 
 # Start training, the model will be automatically saved to the Hub and the output directory
