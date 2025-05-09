@@ -31,4 +31,8 @@ def load_model():
     # Load model and tokenizer
     model = AutoModelForImageTextToText.from_pretrained(model_id, **model_kwargs)
     processor = AutoProcessor.from_pretrained(model_id)
+    processor.chat_template = (
+        "<bos><start_of_turn>user\n{input}<end_of_turn>\n"
+        "<start_of_turn>model\n"
+    )
     return model, processor
