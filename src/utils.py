@@ -1,7 +1,7 @@
 from peft import LoraConfig
 from trl import SFTConfig
 
-from src.load import process_vision_info
+from load import process_vision_info
 
 peft_config = LoraConfig(
     lora_alpha=16,

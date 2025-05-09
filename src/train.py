@@ -1,9 +1,9 @@
 import torch
 from trl import SFTTrainer
-from src.model import load_model
-from src.load import load_data
-from src.utils import load_config, load_args
-from src.utils import collate_fn
+from model import load_model
+from load import load_data
+from utils import load_config, load_args
+from utils import collate_fn
 
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 
