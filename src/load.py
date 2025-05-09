@@ -20,13 +20,17 @@ def format_data(sample, root_path):
                     "content": [
                         {
                             "type": "text",
-                            "text": "You are a helpful assistant that understands English, Chinese and images. Please describe the user's image in English and Chinese by a sentence."
+                            "text": "You are a helpful assistant that understands English, Chinese and images."
                         }
                     ]
                 },
                 {
                     "role": "user",
                     "content": [
+                        {
+                            "type": "text",
+                            "text": "Please describe the user's <image> in English and Chinese by a sentence."
+                        },
                         {
                             "type": "image",
                             "image": image
