@@ -9,8 +9,8 @@ from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndByte
 
 from peft import PeftModel
 
-json_path = "gemma_finetune_format.jsonl"  # Path to the JSONL file
-root_path = "../tools/"  # Path to the directory containing the images
+json_path = "processed_data_1.json"  # Path to the JSONL file
+root_path = "/root/autodl-tmp/"  # Path to the directory containing the images
 model, processor = load_model()
 dataset = load_data(json_path, root_path)
 peft_config = load_config()

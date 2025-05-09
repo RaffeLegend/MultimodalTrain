@@ -29,7 +29,7 @@ def format_data(sample, root_path):
                     "content": [
                         {
                             "type": "text",
-                            "text": "Please describe the user's in English and Chinese by a sentence."
+                            "text": "Please describe the <start_of_image> user's in English and Chinese by a sentence."
                         },
                         {
                             "type": "image",
