@@ -1,52 +1,48 @@
 from datasets import load_dataset
 from PIL import Image
+import json
+import os
 
 # System message for the assistant
 system_message = "You are an expert product description writer for Amazon."
 
 # User prompt that combines the user query and the schema
-user_prompt = """Create a Short Product description based on the provided <PRODUCT> and <CATEGORY> and image.
-Only return description. The description should be SEO optimized and for a better mobile search experience.
-
-<PRODUCT>
-{product}
-</PRODUCT>
-
-<CATEGORY>
-{category}
-</CATEGORY>
-"""
+user_prompt = """English: <English>{english}</English>, Chinese: <Chinese>{chinese}</Chinese>"""
 
 # Convert dataset to OAI messages
-def format_data(sample):
+def format_data(sample, root_path):
+    image = Image.open(os.path.join(root_path, sample["image_path"]))
     return {
-        "messages": [
-            {
-                "role": "system",
-                "content": [{"type": "text", "text": system_message}],
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": user_prompt.format(
-                            product=sample["Product Name"],
-                            category=sample["Category"],
-                        ),
-                    },
-                    {
-                        "type": "image",
-                        "image": sample["image"],
-                    },
-                ],
-            },
-            {
-                "role": "assistant",
-                "content": [{"type": "text", "text": sample["description"]}],
-            },
-        ],
-    }
+            "messages": [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "You are a helpful assistant that understands English, Chinese and images. Please describe the user's image in English and Chinese by a sentence."
+                        }
+                    ]
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "image": image
+                        }
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": user_prompt.format(english=sample["text"],chinese=sample["translation"])
+                        }
+                    ]
+                },
+                ]
+            }
 
 def process_vision_info(messages: list[dict]) -> list[Image.Image]:
     image_inputs = []
@@ -70,12 +66,11 @@ def process_vision_info(messages: list[dict]) -> list[Image.Image]:
                 image_inputs.append(image.convert("RGB"))
     return image_inputs
 
-def load_data():
-    # Load dataset from the hub
-    dataset = load_dataset("philschmid/amazon-product-descriptions-vlm", split="train")
-
+def load_data(json_path,root_path):
+    with open(json_path, "r", encoding="utf-8") as f:
+        dataset = json.load(f)
     # Convert dataset to OAI messages
     # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
-    dataset = [format_data(sample) for sample in dataset]
+    dataset = [format_data(sample, root_path) for sample in dataset]
 
     return dataset

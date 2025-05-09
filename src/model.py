@@ -30,5 +30,5 @@ def load_model():
     """
     # Load model and tokenizer
     model = AutoModelForImageTextToText.from_pretrained(model_id, **model_kwargs)
-    processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it")
+    processor = AutoProcessor.from_pretrained(model_id)
     return model, processor

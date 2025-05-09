@@ -9,8 +9,10 @@ from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndByte
 
 from peft import PeftModel
 
+json_path = "gemma_finetune_format.jsonl"  # Path to the JSONL file
+root_path = "../tools/"  # Path to the directory containing the images
 model, processor = load_model()
-dataset = load_data()
+dataset = load_data(json_path, root_path)
 peft_config = load_config()
 args = load_args()
 
@@ -29,11 +31,6 @@ trainer.train()
 # Save the final model again to the Hugging Face Hub
 trainer.save_model()
 
-# free the memory again
-# del model
-# del trainer
-# torch.cuda.empty_cache()
-
 # Load Model base model
 model_id = "google/gemma-3-4b-pt" # or `google/gemma-3-12b-pt`, `google/gemma-3-27-pt`
 model = AutoModelForImageTextToText.from_pretrained(model_id, low_cpu_mem_usage=True)
@@ -45,3 +42,9 @@ merged_model.save_pretrained("merged_model", safe_serialization=True, max_shard_
 
 processor = AutoProcessor.from_pretrained(args.output_dir)
 processor.save_pretrained("merged_model")
+
+
+# free the memory again
+# del model
+# del trainer
+# torch.cuda.empty_cache()
