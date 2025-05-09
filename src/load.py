@@ -13,41 +13,58 @@ user_prompt = """English: <English>{english}</English>, Chinese: <Chinese>{chine
 def format_data(sample, root_path):
     with Image.open(os.path.join(root_path, sample["image_path"])) as image:
         image = image.convert("RGB")
+    # return {
+    #         "messages": [
+    #             {
+    #                 "role": "system",
+    #                 "content": [
+    #                     {
+    #                         "type": "text",
+    #                         "text": "You are a helpful assistant that understands English, Chinese and images."
+    #                     }
+    #                 ]
+    #             },
+    #             {
+    #                 "role": "user",
+    #                 "content": [
+    #                     {
+    #                         "type": "text",
+    #                         "text": "Please describe the user's <image> in English and Chinese by a sentence."
+    #                     },
+    #                     {
+    #                         "type": "image",
+    #                         "image": image
+    #                     }
+    #                 ]
+    #             },
+    #             {
+    #                 "role": "assistant",
+    #                 "content": [
+    #                     {
+    #                         "type": "text", 
+    #                         "text": user_prompt.format(english=sample["text"],chinese=sample["translation"])
+    #                     }
+    #                 ]
+    #             },
+    #             ]
+    #         }
     return {
             "messages": [
                 {
                     "role": "system",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "You are a helpful assistant that understands English, Chinese and images."
-                        }
-                    ]
+                    "content": "You are a helpful assistant that understands English, Chinese and images."
                 },
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Please describe the user's <image> in English and Chinese by a sentence."
-                        },
-                        {
-                            "type": "image",
-                            "image": image
-                        }
-                    ]
+                    "content": "Please describe the user's <image> in English and Chinese by a sentence."
                 },
                 {
                     "role": "assistant",
-                    "content": [
-                        {
-                            "type": "text", 
-                            "text": user_prompt.format(english=sample["text"],chinese=sample["translation"])
-                        }
-                    ]
-                },
-                ]
-            }
+                    "content": user_prompt.format(english=sample["text"],chinese=sample["translation"])
+                }
+            ],
+            "image": image,
+        }
 
 def process_vision_info(messages: list[dict]) -> list[Image.Image]:
     image_inputs = []
