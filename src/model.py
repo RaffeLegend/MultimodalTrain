@@ -31,5 +31,15 @@ def load_model():
     # Load model and tokenizer
     model = AutoModelForImageTextToText.from_pretrained(model_id, **model_kwargs)
     processor = AutoProcessor.from_pretrained(model_id)
+    processor.chat_template = (
+    "<bos>"
+    "{% for message in messages %}"
+    "{% if message['role'] == 'user' %}"
+    "<start_of_turn>user\n{{ message['content'] }}<end_of_turn>\n"
+    "{% elif message['role'] == 'assistant' %}"
+    "<start_of_turn>model\n{{ message['content'] }}<end_of_turn>\n"
+    "{% endif %}"
+    "{% endfor %}"
+    )
 
     return model, processor
