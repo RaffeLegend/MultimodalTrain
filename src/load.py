@@ -11,7 +11,8 @@ user_prompt = """English: <English>{english}</English>, Chinese: <Chinese>{chine
 
 # Convert dataset to OAI messages
 def format_data(sample, root_path):
-    image = Image.open(os.path.join(root_path, sample["image_path"]))
+    with Image.open(os.path.join(root_path, sample["image_path"])) as image:
+        image = image.convert("RGB")
     return {
             "messages": [
                 {
