@@ -17,7 +17,7 @@ peft_config = LoraConfig(
 )
 
 args = SFTConfig(
-    output_dir="gemma-product-description",     # directory to save and repository id
+    output_dir="/root/autodl-tmp/gemma-product-description",     # directory to save and repository id
     num_train_epochs=1,                         # number of training epochs
     per_device_train_batch_size=1,              # batch size per device during training
     gradient_accumulation_steps=4,              # number of steps before performing a backward/update pass

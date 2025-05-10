@@ -9,7 +9,7 @@ from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndByte
 
 from peft import PeftModel
 
-json_path = "processed_data_1.json"  # Path to the JSONL file
+json_path = "processed_data_2.json"  # Path to the JSONL file
 root_path = "/root/autodl-tmp/"  # Path to the directory containing the images
 model, processor = load_model()
 dataset = load_data(json_path, root_path)
@@ -36,12 +36,12 @@ model_id = "google/gemma-3-4b-pt" # or `google/gemma-3-12b-pt`, `google/gemma-3-
 model = AutoModelForImageTextToText.from_pretrained(model_id, low_cpu_mem_usage=True)
 
 # Merge LoRA and base model and save
-peft_model = PeftModel.from_pretrained(model, args.output_dir)
-merged_model = peft_model.merge_and_unload()
-merged_model.save_pretrained("merged_model", safe_serialization=True, max_shard_size="2GB")
+# peft_model = PeftModel.from_pretrained(model, args.output_dir)
+# merged_model = peft_model.merge_and_unload()
+# merged_model.save_pretrained("/root/autodl-tmp/merged_model", safe_serialization=True, max_shard_size="2GB")
 
-processor = AutoProcessor.from_pretrained(args.output_dir)
-processor.save_pretrained("merged_model")
+# processor = AutoProcessor.from_pretrained(args.output_dir)
+# processor.save_pretrained("/root/autodl-tmp/merged_model")
 
 
 # free the memory again
