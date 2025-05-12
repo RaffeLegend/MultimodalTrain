@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from model import load_model
 from load import load_data
-from load import process_vision_info, format_sample
+from load import process_vision_info
 
 # 配置路径
 json_path = "processed_data_2.json"  # 含参考描述字段 reference
@@ -19,7 +19,7 @@ dataset = load_data(json_path, root_path)
 
 # 生成单条样本描述
 def generate(sample):
-    messages = format_sample(sample, root_path)['messages']
+    messages = sample['messages']
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     image_inputs = process_vision_info(messages)
     inputs = processor(text=[text], images=image_inputs, padding=True, return_tensors="pt").to(model.device)
