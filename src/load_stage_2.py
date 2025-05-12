@@ -11,7 +11,7 @@ user_prompt = """Please analyze the given image <start_of_image> containing both
 response_format = """<think>your think step</think><answer>{"classification": {RESULT}, "region": {"bbox":[{X_MIN},{Y_MIN},{X_MAX},{Y_MAX}]}}</answer>"""
 # Convert dataset to OAI messages
 def format_data(sample, root_path):
-    with Image.open(os.path.join(root_path, sample["image_path"])) as image:
+    with Image.open(os.path.join(root_path, sample["captioned_path"])) as image:
         image = image.convert("RGB")
     return {
             "messages": [
@@ -77,5 +77,6 @@ def load_data(json_path,root_path):
     # Convert dataset to OAI messages
     # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
     dataset = [format_data(sample, root_path) for sample in dataset]
+    dataset = dataset[:100]  # Limit to the first 100 samples
 
     return dataset

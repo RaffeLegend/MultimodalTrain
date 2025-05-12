@@ -9,7 +9,7 @@ from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndByte
 
 from peft import PeftModel
 
-json_path = "processed_data_2.json"  # Path to the JSONL file
+json_path = "training_with_caption_path.json"  # Path to the JSONL file
 root_path = "/root/autodl-tmp/"  # Path to the directory containing the images
 model, processor = load_model()
 dataset = load_data(json_path, root_path)
