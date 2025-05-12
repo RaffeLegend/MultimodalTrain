@@ -3,7 +3,7 @@ from evaluate import load as load_metric
 from tqdm import tqdm
 
 from model import load_model
-from load_stage_2 import load_data
+from load_eval import load_data
 from load import process_vision_info
 
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig

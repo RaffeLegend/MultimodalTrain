@@ -6,9 +6,9 @@ import os
 system_message = "You are an expert in misinformation detection area."
 
 # User prompt that combines the user query and the schema
-user_prompt = """Please analyze the given image <start_of_image> containing both Chinese and English subtitles and complete the following three tasks:Classification Task: classify the alignment between the image and the subtitles into one of the following six categories:"All Consistent","Image Manipulated","Both Misaligned","Chinese Misaligned", "English Misaligned","All Inconsistent".Manipulation Detection: if the image has been manipulated, return one or more bounding boxes for the manipulated regions in the format: {"bbox":[x\_min, y\_min, x\_max, y\_max]}. If no manipulation is found, return an empty list.Decision Explanation: briefly explain your thinking before the classification and any detected regions.Return your output using the following format, wrapped in tags:<think>EXPLANATION</think><answer>{"classification": RESULT, "region": {"bbox":[X_MIN,Y_MIN,X_MAX,Y_MAX]}}</answer>"""
+user_prompt = """Please analyze the given image <start_of_image> containing both Chinese and English subtitles and complete the following three tasks:Classification Task: classify the alignment between the image and the subtitles into one of the following six categories:"All Consistent","Image Manipulated","Both Misaligned","Chinese Misaligned", "English Misaligned","All Inconsistent".Manipulation Detection: if the image has been manipulated, return one or more bounding boxes for the manipulated regions in the format: {"bbox":[x\_min, y\_min, x\_max, y\_max]}. If no manipulation is found, return an empty list.Return your output using the following format, wrapped in tags:<answer>{"classification": RESULT, "region": {"bbox":[X_MIN,Y_MIN,X_MAX,Y_MAX]}}</answer>"""
 
-response_format = """<think>your think step</think><answer>{{"classification": {RESULT}, "region": {{"bbox":[{BBOX}]}}}}</answer>"""
+response_format = """<answer>{{"classification": {RESULT}, "region": {{"bbox":[{BBOX}]}}}}</answer>"""
 
 def format(sample, response=response_format):
     if sample["bbox"] is not None:
@@ -86,6 +86,5 @@ def load_data(json_path,root_path):
     # Convert dataset to OAI messages
     # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
     dataset = [format_data(sample, root_path) for sample in dataset]
-    dataset = dataset[:100]  # Limit to the first 100 samples
 
     return dataset
