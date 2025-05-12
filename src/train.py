@@ -1,7 +1,7 @@
 import torch
 from trl import SFTTrainer
 from model import load_model
-from load import load_data
+from load_stage_2 import load_data
 from utils import load_config, load_args
 from utils import collate_fn
 
