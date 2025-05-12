@@ -3,16 +3,29 @@ from evaluate import load as load_metric
 from tqdm import tqdm
 
 from model import load_model
-from load import load_data
+from load_stage_2 import load_data
 from load import process_vision_info
 
+from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 # 配置路径
-json_path = "processed_data_2.json"  # 含参考描述字段 reference
+json_path = "training_with_caption_path.json"  # 含参考描述字段 reference
 root_path = "/root/autodl-tmp/"      # 图像文件根路径
 
 # 加载模型和处理器
-model, processor = load_model()
-model.eval()  # 设为评估模式
+#model, processor = load_model()
+#model.eval()  # 设为评估模式
+
+import torch
+
+# Load Model with PEFT adapter
+model = AutoModelForImageTextToText.from_pretrained(
+  "/root/autodl-tmp/BiMi/",
+  device_map="auto",
+  torch_dtype=torch.bfloat16,
+  attn_implementation="eager",
+)
+processor = AutoProcessor.from_pretrained("/root/autodl-tmp/BiMi/")
+
 
 # 加载数据
 dataset = load_data(json_path, root_path)
@@ -37,7 +50,13 @@ def evaluate_model(samples):
     references = []
     
     for sample in tqdm(samples):
+        print("-------------------------sample------------------")
+        print(sample)
+        print("-------------------------------------------------")
         pred = generate(sample)
+        print("-------------------------prediction--------------")
+        print(pred)
+        print("--------------------------------------------------")
         predictions.append(pred)
         references.append(sample["reference"])
 
