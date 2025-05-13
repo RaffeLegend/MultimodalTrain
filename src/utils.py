@@ -81,18 +81,65 @@ def collate_fn(examples, processor):
     return batch
 
 # result
+def try_fix_json_string(s):
+    # 尝试快速修复常见括号问题
+    stack = []
+    fixed = ""
+
+    for char in s:
+        if char in '{[':
+            stack.append(char)
+            fixed += char
+        elif char in '}]':
+            if stack:
+                last = stack[-1]
+                if (last == '{' and char == '}') or (last == '[' and char == ']'):
+                    stack.pop()
+                    fixed += char
+                else:
+                    # 错误匹配：跳过这个 char
+                    continue
+            else:
+                # 没有开启括号却出现关闭，跳过
+                continue
+        else:
+            fixed += char
+
+    # 结束后补齐括号
+    while stack:
+        last = stack.pop()
+        if last == '{':
+            fixed += '}'
+        elif last == '[':
+            fixed += ']'
+
+    return fixed
+
 def extract(text, image_width, image_height):
-    match = re.search(r'<answer>({.*?})</answer>', text)
+    match = re.search(r'<answer>(.*?)</answer>', text, re.DOTALL)
     if not match:
         return None, None
 
-    try:
-        data = json.loads(match.group(1))
-        classification = data.get("classification", "")
-        regions = data.get("region", [])
+    raw_json = match.group(1).strip()
 
-        if isinstance(regions, list) and len(regions) > 0:
-            first_region = regions[0]
+    try:
+        # 尝试第一次直接解析
+        data = json.loads(raw_json)
+    except json.JSONDecodeError:
+        # 如果失败就尝试修复括号后再解析
+        try:
+            fixed_json = try_fix_json_string(raw_json)
+            data = json.loads(fixed_json)
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] 修复 JSON 失败: {e}")
+            return None, None
+
+    classification = data.get("classification", "")
+    regions = data.get("region", [])
+
+    if isinstance(regions, list) and len(regions) > 0:
+        first_region = regions[0]
+        if isinstance(first_region, dict):
             bbox = first_region.get("bbox", [])
             if isinstance(bbox, list) and len(bbox) == 4:
                 x1, y1, x2, y2 = bbox
@@ -103,12 +150,8 @@ def extract(text, image_width, image_height):
                     y2 / image_height
                 ]
                 return classification, norm_bbox
-        return classification, None
 
-    except (json.JSONDecodeError, TypeError, AttributeError):
-        pass
-
-    return None, None
+    return classification, None
 
 def iou(boxA, boxB):
     if boxA is None or boxB is None:

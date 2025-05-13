@@ -5,7 +5,7 @@ from load_eval import load_data
 from load import process_vision_info
 
 from utils import extract, iou
-from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
+from transformers import AutoProcessor, AutoModel
 # 配置路径
 json_path = "training_with_caption_path.json"  # 含参考描述字段 reference
 root_path = "/root/autodl-tmp/"      # 图像文件根路径
@@ -15,10 +15,9 @@ root_path = "/root/autodl-tmp/"      # 图像文件根路径
 #model.eval()  # 设为评估模式
 
 import torch
-from peft import PeftModel
 
 # Load Model with PEFT adapter
-model = AutoModelForImageTextToText.from_pretrained(
+model = AutoModel.from_pretrained(
   "Qwen/Qwen3-8B",
   device_map="auto",
   torch_dtype=torch.bfloat16,
@@ -78,8 +77,8 @@ def evaluate_model(samples, ref_samples):
     return accuracy, f1, mean_iou
 
 # 从数据集中选择前N个样本作为评估集
-eval_samples = dataset[2500:]  # 或使用你自己的 eval_dataset 切分方式
-ref_samples = dataset_json[2500:]
+eval_samples = dataset[:100]  # 或使用你自己的 eval_dataset 切分方式
+ref_samples = dataset_json[:100]
 
 # 执行评估
 accuracy, f1, mean_iou = evaluate_model(eval_samples, ref_samples)
