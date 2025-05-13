@@ -80,26 +80,36 @@ def collate_fn(examples, processor):
     batch["labels"] = labels
     return batch
 
-# result 
-def extract(text):
-    # 正则表达式提取 classification 和 bbox（包括 null 情况）
-    pattern = r'<answer>\{\{"classification":\s*"(.+?)",\s*"region":\s*\{"bbox":\s*(null|\[[^\]]*\])\}\}\}</answer>'
+# result
+def extract(text, image_width, image_height):
+    match = re.search(r'<answer>({.*?})</answer>', text)
+    if not match:
+        return None, None
 
-    matches = re.findall(pattern, text)
+    try:
+        data = json.loads(match.group(1))
+        classification = data.get("classification", "")
+        regions = data.get("region", [])
 
-    results = []
-    for classification, bbox_str in matches:
-        if bbox_str == "null":
-            bbox = None
-        else:
-            # 安全解析 bbox 字符串为 float 列表
-            try:
-                bbox = [float(x.strip()) for x in bbox_str.strip('[]').split(',')]
-            except ValueError:
-                bbox = None  # fallback if malformed
+        if isinstance(regions, list) and len(regions) > 0:
+            first_region = regions[0]
+            bbox = first_region.get("bbox", [])
+            if isinstance(bbox, list) and len(bbox) == 4:
+                x1, y1, x2, y2 = bbox
+                norm_bbox = [
+                    x1 / image_width,
+                    y1 / image_height,
+                    x2 / image_width,
+                    y2 / image_height
+                ]
+                return classification, norm_bbox
+        return classification, None
 
-        return classification, bbox
-    
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        pass
+
+    return None, None
+
 def iou(boxA, boxB):
     if boxA is None or boxB is None:
         return 0.0

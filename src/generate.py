@@ -6,7 +6,8 @@ from load_eval import load_data
 from load import process_vision_info
 
 from utils import extract, iou
-
+from PIL import Image
+import os
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 # 配置路径
 json_path = "training_with_caption_path.json"  # 含参考描述字段 reference
@@ -20,18 +21,27 @@ import torch
 from peft import PeftModel
 
 # Load Model with PEFT adapter
-base_model = AutoModelForImageTextToText.from_pretrained(
+model = AutoModelForImageTextToText.from_pretrained(
   "google/gemma-3-4b-it",
   device_map="auto",
   torch_dtype=torch.bfloat16,
   attn_implementation="eager",
-)
-model = PeftModel.from_pretrained(base_model, "/root/autodl-tmp/BiMi/").eval()
-processor = AutoProcessor.from_pretrained("/root/autodl-tmp/BiMi/")
-
+).eval()
+# model = PeftModel.from_pretrained(base_model, "/root/autodl-tmp/BiMi/").eval()
+processor = AutoProcessor.from_pretrained("google/gemma-3-4b-it")
+processor.chat_template = (
+    "<bos>"
+    "{% for message in messages %}"
+    "{% if message['role'] == 'user' %}"
+    "<start_of_turn>user\n{{ message['content'] }}<end_of_turn>\n"
+    "{% elif message['role'] == 'assistant' %}"
+    "<start_of_turn>model\n{{ message['content'] }}<end_of_turn>\n"
+    "{% endif %}"
+    "{% endfor %}"
+    )
 
 # 加载数据
-dataset = load_data(json_path, root_path)
+dataset, dataset_json = load_data(json_path, root_path)
 
 # 生成单条样本描述
 def generate(sample):
@@ -42,19 +52,19 @@ def generate(sample):
 
     stop_token_ids = [processor.tokenizer.eos_token_id, processor.tokenizer.convert_tokens_to_ids("<end_of_turn>")]
     with torch.no_grad():
-        generated_ids = model.generate(**inputs, max_new_tokens=256, top_p=1.0, do_sample=True, temperature=0.8, eos_token_id=stop_token_ids)
+        generated_ids = model.generate(**inputs, max_new_tokens=512, top_p=1.0, do_sample=True, temperature=0.8, eos_token_id=stop_token_ids)
     generated_ids_trimmed = [out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)]
     output_text = processor.batch_decode(generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)
     return output_text[0]
 
 # 评估函数（输入：数据集子集）
-def evaluate_model(samples):
+def evaluate_model(samples, ref_samples):
     predictions = []
     detections = []
     prediction_ref = []
     detections_ref = []
     
-    for sample in tqdm(samples):
+    for sample, sample_json in zip(samples, ref_samples):
         print("-------------------------sample------------------")
         print(sample)
         print("-------------------------------------------------")
@@ -63,11 +73,13 @@ def evaluate_model(samples):
         print(pred)
         print("--------------------------------------------------")
         predictions.append(pred)
-        classification, bbox = extract(pred)
+        image_width, image_height = sample["messages"][1]["content"][1]["image"].size
+        classification, bbox = extract(pred, image_height, image_width)
+        print(classification, bbox)
         predictions.append(classification)
         detections.append(bbox)
-        prediction_ref.append(sample["label"])
-        detections_ref.append(sample["bbox"])
+        prediction_ref.append(sample_json["label"])
+        detections_ref.append(sample_json["bbox"])
 
     # 适用于分类任务
     accuracy = accuracy_score(predictions, prediction_ref)
@@ -80,9 +92,10 @@ def evaluate_model(samples):
 
 # 从数据集中选择前N个样本作为评估集
 eval_samples = dataset[2500:]  # 或使用你自己的 eval_dataset 切分方式
+ref_samples = dataset_json[2500:]
 
 # 执行评估
-accuracy, f1, mean_iou = evaluate_model(eval_samples)
+accuracy, f1, mean_iou = evaluate_model(eval_samples, ref_samples)
 
 print("Evaluation Results:")
 print(accuracy, f1, mean_iou)

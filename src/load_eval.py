@@ -31,8 +31,6 @@ def format(sample, response=response_format):
 
 # Convert dataset to OAI messages
 def format_data(sample, root_path):
-    print(sample.keys())
-    print(sample["bbox"])
     with Image.open(os.path.join(root_path, sample["captioned_path"])) as image:
         image = image.convert("RGB")
     return {
@@ -86,9 +84,9 @@ def process_vision_info(messages: list[dict]) -> list[Image.Image]:
 
 def load_data(json_path,root_path):
     with open(json_path, "r", encoding="utf-8") as f:
-        dataset = json.load(f)
+        dataset_json = json.load(f)
     # Convert dataset to OAI messages
     # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
-    dataset = [format_data(sample, root_path) for sample in dataset]
+    dataset = [format_data(sample, root_path) for sample in dataset_json]
 
-    return dataset
+    return dataset, dataset_json
