@@ -7,6 +7,7 @@ from PIL import Image
 
 from utils import extract, iou
 import json
+import os
 # 配置路径
 json_path = "../data_tools/training_with_caption_path.json"  # 含参考描述字段 reference
 root_path = "/root/autodl-tmp/"      # 图像文件根路径
@@ -30,7 +31,7 @@ processor = AutoProcessor.from_pretrained(path, trust_remote_code=True, use_fast
 # 生成单条样本描述
 def generate(sample):
     # single-image single-round conversation (单图单轮对话)
-    pixel_values = load_image(sample['captioned_path'], max_num=1).to(torch.bfloat16).cuda()
+    pixel_values = load_image(os.path.join(root_path, sample['captioned_path']), max_num=1).to(torch.bfloat16).cuda()
     generation_config = dict(max_new_tokens=1024, do_sample=True)
     question = system_message + user_prompt
     response = model.chat(tokenizer, pixel_values, question, generation_config)
