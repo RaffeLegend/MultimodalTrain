@@ -11,6 +11,8 @@ from functools import partial
 logger = get_logger()
 seed_everything(42)
 
+system_prompt = """You are an expert in misinformation detection area. A conversation between User and Assistant. The user asks a question, and the Assistant solves it. The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags.Please analyze the image <image> with both Chinese and English subtitles. Complete the following three tasks:Classification Task: choose one of six labels: All Consistent: image and both subtitles are accurate.Image Manipulated: only image is fake; subtitles are real.Both Misaligned: image is real; both subtitles are misleading.Chinese Misaligned: image is real; Chinese subtitle is misleading.English Misaligned: image is real; English subtitle is misleading.All Inconsistent: image and both subtitles are misleading.Manipulation Detection: if the image is manipulated, return a bounding box as {\"bbox\":[x_min, y_min, x_max, y_max]}. Otherwise, return an empty list.<think>EXPLANATION</think><answer>{\"classification\": RESULT, \"region\": {\"bbox\":[X_MIN,Y_MIN,X_MAX,Y_MAX]}}</answer>"""
+
 model_id = "Qwen/Qwen2.5-3B-Instruct"  # 模型ID
 output_dir = "/root/autodl-tmp/biqwen/"  # 输出目录
 data_path = "converted_dialog.jsonl"  # 数据集路径
@@ -18,7 +20,7 @@ data_path = "converted_dialog.jsonl"  # 数据集路径
 # 获取模型和template，并加入可训练的LoRA模块
 model, tokenizer = get_model_tokenizer(model_id, device_map="auto", torch_dtype="bfloat16")
 logger.info(f'model_info: {model.model_info}')
-template = get_template(model.model_meta.template, tokenizer, max_length=1024)
+template = get_template(model.model_meta.template, tokenizer, max_length=1024, default_system_prompt=system_prompt)
 template.set_mode('train')
 
 lora_rank = 8
