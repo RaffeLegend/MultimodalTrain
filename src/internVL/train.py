@@ -13,7 +13,7 @@ seed_everything(42)
 
 model_id = "Qwen/Qwen2.5-3B-Instruct"  # 模型ID
 output_dir = "/root/autodl-tmp/biqwen/"  # 输出目录
-data_path = "conversation.json"  # 数据集路径
+data_path = "converted_dialog.jsonl"  # 数据集路径
 
 # 获取模型和template，并加入可训练的LoRA模块
 model, tokenizer = get_model_tokenizer(model_id, device_map="auto", torch_dtype="bfloat16")
@@ -37,7 +37,7 @@ logger.info(f'model_parameter_info: {model_parameter_info}')
 # Download and load the dataset, split it into a training set and a validation set,
 # and encode the text data into tokens.
 train_dataset, val_dataset = load_dataset(data_path, split_dataset_ratio=0.1, num_proc=4,
-        model_name="BIMIBI", model_author="RAFFE", seed=42)
+        model_name="BIMIBI", model_author="RAFFE", seed=42, use_hf=False)
 
 logger.info(f'train_dataset: {train_dataset}')
 logger.info(f'val_dataset: {val_dataset}')
