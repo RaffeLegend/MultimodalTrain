@@ -2,12 +2,10 @@ import torch
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score, f1_score
 
-from model import load_model
 from load_eval import load_data
 from load import process_vision_info
 
-import re
-import json
+from utils import extract, iou
 
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 # 配置路径
@@ -49,43 +47,12 @@ def generate(sample):
     output_text = processor.batch_decode(generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)
     return output_text[0]
 
-# result 
-def extract(text):
-    # 正则表达式提取 classification 和 bbox（包括 null 情况）
-    pattern = r'<answer>\{\{"classification":\s*"(.+?)",\s*"region":\s*\{"bbox":\s*(null|\[[^\]]*\])\}\}\}</answer>'
-
-    matches = re.findall(pattern, text)
-
-    results = []
-    for classification, bbox_str in matches:
-        if bbox_str == "null":
-            bbox = None
-        else:
-            # 安全解析 bbox 字符串为 float 列表
-            try:
-                bbox = [float(x.strip()) for x in bbox_str.strip('[]').split(',')]
-            except ValueError:
-                bbox = None  # fallback if malformed
-
-        return classification, bbox
-
-def iou(boxA, boxB):
-    if boxA is None or boxB is None:
-        return 0.0
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[2], boxB[2])
-    yB = min(boxA[3], boxB[3])
-    interArea = max(0, xB - xA) * max(0, yB - yA)
-    boxAArea = max(0, boxA[2] - boxA[0]) * max(0, boxA[3] - boxA[1])
-    boxBArea = max(0, boxB[2] - boxB[0]) * max(0, boxB[3] - boxB[1])
-    unionArea = boxAArea + boxBArea - interArea
-    return interArea / unionArea if unionArea > 0 else 0.0
-
 # 评估函数（输入：数据集子集）
 def evaluate_model(samples):
     predictions = []
-    references = []
+    detections = []
+    prediction_ref = []
+    detections_ref = []
     
     for sample in tqdm(samples):
         print("-------------------------sample------------------")
@@ -96,7 +63,7 @@ def evaluate_model(samples):
         print(pred)
         print("--------------------------------------------------")
         predictions.append(pred)
-        classification, bbox = extract(text)
+        classification, bbox = extract(pred)
         predictions.append(classification)
         detections.append(bbox)
         prediction_ref.append(sample["label"])

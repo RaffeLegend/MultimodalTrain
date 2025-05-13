@@ -1,5 +1,7 @@
 from peft import LoraConfig
 from trl import SFTConfig
+import re
+import json
 
 from load import process_vision_info
 
@@ -77,3 +79,36 @@ def collate_fn(examples, processor):
 
     batch["labels"] = labels
     return batch
+
+# result 
+def extract(text):
+    # 正则表达式提取 classification 和 bbox（包括 null 情况）
+    pattern = r'<answer>\{\{"classification":\s*"(.+?)",\s*"region":\s*\{"bbox":\s*(null|\[[^\]]*\])\}\}\}</answer>'
+
+    matches = re.findall(pattern, text)
+
+    results = []
+    for classification, bbox_str in matches:
+        if bbox_str == "null":
+            bbox = None
+        else:
+            # 安全解析 bbox 字符串为 float 列表
+            try:
+                bbox = [float(x.strip()) for x in bbox_str.strip('[]').split(',')]
+            except ValueError:
+                bbox = None  # fallback if malformed
+
+        return classification, bbox
+    
+def iou(boxA, boxB):
+    if boxA is None or boxB is None:
+        return 0.0
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+    boxAArea = max(0, boxA[2] - boxA[0]) * max(0, boxA[3] - boxA[1])
+    boxBArea = max(0, boxB[2] - boxB[0]) * max(0, boxB[3] - boxB[1])
+    unionArea = boxAArea + boxBArea - interArea
+    return interArea / unionArea if unionArea > 0 else 0.0
