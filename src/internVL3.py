@@ -9,7 +9,7 @@ from utils import extract, iou
 import json
 import os
 # 配置路径
-json_path = "../data_tools/training_with_caption_path.json"  # 含参考描述字段 reference
+json_path = "training_with_caption_path.json"  # 含参考描述字段 reference
 root_path = "/root/autodl-tmp/"      # 图像文件根路径
 
 import torch
@@ -54,28 +54,33 @@ def evaluate_model(ref_samples):
         print("-------------------------prediction--------------")
         print(pred)
         print("--------------------------------------------------")
-        predictions.append(pred)
-        pixel_values = Image.open(sample['captioned_path'])
+        pixel_values = Image.open(os.path.join(root_path, sample['captioned_path']))
         image_width, image_height = pixel_values.size
         classification, bbox = extract(pred, image_height, image_width)
         print(classification, bbox)
-        predictions.append(classification)
-        detections.append(bbox)
-        prediction_ref.append(sample["label"])
-        detections_ref.append(sample["bbox"])
+        if classification is not None:
+            prediction_ref.append(sample["label"])
+            predictions.append(classification)
+        if bbox is not None:
+            detections.append(bbox)
+            detections_ref.append(sample["bbox"])
 
     # 适用于分类任务
+    print(predictions, prediction_ref)
     accuracy = accuracy_score(predictions, prediction_ref)
     f1 = f1_score(predictions, prediction_ref, average="macro")  # 或 micro, weighted 等
     # 计算平均IoU
     ious = [iou(p, r) for p, r in zip(detections, detections_ref)]
-    mean_iou = sum(ious) / len(ious)
+    if len(ious) == 0:
+        mean_iou = 0
+    else:
+        mean_iou = sum(ious) / len(ious)
 
     return accuracy, f1, mean_iou
 
 # 执行评估
 samples = json.load(open(json_path, 'r', encoding='utf-8'))
-accuracy, f1, mean_iou = evaluate_model(samples)
+accuracy, f1, mean_iou = evaluate_model(samples[:20])
 
 print("Evaluation Results:")
 print(accuracy, f1, mean_iou)
