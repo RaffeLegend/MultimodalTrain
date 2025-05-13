@@ -1,6 +1,6 @@
 import os
 import torch
-from swift.llm import get_model_tokenizer, get_template
+from swift.llm import get_model_tokenizer, get_template, get_tokenizer
 from swift.tuners import Swift
 from transformers import GenerationConfig
 
@@ -13,7 +13,8 @@ output_dir = "/root/autodl-tmp/biqwen/"  # 训练输出路径
 checkpoint_dir = output_dir  # 可以设置为包含最后checkpoint的路径
 
 # 加载模型和 tokenizer
-model, tokenizer = get_model_tokenizer(base_model_id, torch_dtype="bfloat16", device_map="auto")
+model = Swift.from_pretrained(base_model_id, checkpoint_dir, torch_dtype="bfloat16", device_map="auto")
+tokenizer = get_tokenizer(base_model_id)
 template = get_template(model.model_meta.template, tokenizer)
 
 # 加载 LoRA 微调权重
