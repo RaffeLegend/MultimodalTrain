@@ -32,7 +32,7 @@ user_prompt = """Please analyze the given image <start_of_image> containing both
     <answer>{"classification": RESULT, "region": {"bbox":[X_MIN,Y_MIN,X_MAX,Y_MAX]}}</answer>"""
 
 # response_format = """<think>...your detailed reasoning and step-by-step explanation...</think><answer>{{"classification": "...", "region": {{"bbox":["..."]}}}}</answer>"""
-response_format = <answer>{{"classification": "...", "region": {{"bbox":["..."]}}}}</answer>"""
+response_format = """<answer>{{"classification": "...", "region": {{"bbox":["..."]}}}}</answer>"""
 
 def format(sample, response=response_format):
     if sample["bbox"] is not None:
