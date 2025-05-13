@@ -20,7 +20,7 @@ data_path = "converted_dialog.jsonl"  # 数据集路径
 # 获取模型和template，并加入可训练的LoRA模块
 model, tokenizer = get_model_tokenizer(model_id, device_map="auto", torch_dtype="bfloat16")
 logger.info(f'model_info: {model.model_info}')
-template = get_template(model.model_meta.template, tokenizer, max_length=1024, default_system_prompt=system_prompt)
+template = get_template(model.model_meta.template, tokenizer, max_length=1024, default_system=system_prompt)
 template.set_mode('train')
 
 lora_rank = 8
