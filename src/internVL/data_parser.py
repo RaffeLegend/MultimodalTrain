@@ -18,19 +18,15 @@ with open(input_json_path, "r", encoding="utf-8") as f_in, open(output_json_path
 
         # 构造 assistant 的 response 内容
         bbox_values = ", ".join(str(x) for x in sample["bbox"]) if sample["bbox"] else ""
-        assistant_response = """
+        assistant_response = (
             "<think></think>"
             f"<answer>{{\"classification\": {json.dumps(sample['label'])}, "
             f"\"region\": {{\"bbox\":[{bbox_values}]}}}}</answer>"
-        """
+        )
 
         # 组装最终结构
         messages_data = {
             "messages": [
-                # {
-                #     "role": "system",
-                #     "content": system_message
-                # },
                 {
                     "role": "user",
                     "content": user_prompt
