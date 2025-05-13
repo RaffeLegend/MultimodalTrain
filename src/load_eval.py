@@ -77,6 +77,5 @@ def load_data(json_path,root_path):
     # Convert dataset to OAI messages
     # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
     dataset = [format_data(sample, root_path) for sample in dataset]
-    dataset = dataset[:100]  # Limit to the first 100 samples
 
     return dataset
