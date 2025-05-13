@@ -72,7 +72,6 @@ def evaluate_model(samples, ref_samples):
         print("-------------------------prediction--------------")
         print(pred)
         print("--------------------------------------------------")
-        predictions.append(pred)
         image_width, image_height = sample["messages"][1]["content"][1]["image"].size
         classification, bbox = extract(pred, image_height, image_width)
         print(classification, bbox)
@@ -83,7 +82,7 @@ def evaluate_model(samples, ref_samples):
 
     # 适用于分类任务
     accuracy = accuracy_score(predictions, prediction_ref)
-    f1 = f1_score(predictions, prediction_ref, average="macro")  # 或 micro, weighted 等
+    f1 = f1_score(detections, detections_ref, average="macro")  # 或 micro, weighted 等
     # 计算平均IoU
     ious = [iou(p, r) for p, r in zip(detections, detections_ref)]
     mean_iou = sum(ious) / len(ious)
@@ -91,8 +90,8 @@ def evaluate_model(samples, ref_samples):
     return accuracy, f1, mean_iou
 
 # 从数据集中选择前N个样本作为评估集
-eval_samples = dataset[2500:]  # 或使用你自己的 eval_dataset 切分方式
-ref_samples = dataset_json[2500:]
+eval_samples = dataset[100:]  # 或使用你自己的 eval_dataset 切分方式
+ref_samples = dataset_json[100:]
 
 # 执行评估
 accuracy, f1, mean_iou = evaluate_model(eval_samples, ref_samples)
