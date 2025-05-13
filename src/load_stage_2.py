@@ -87,4 +87,4 @@ def load_data(json_path,root_path):
     # need to use list comprehension to keep Pil.Image type, .mape convert image to bytes
     dataset = [format_data(sample, root_path) for sample in dataset]
 
-    return dataset
+    return dataset[:2500]

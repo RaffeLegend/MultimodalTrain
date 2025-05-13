@@ -1,10 +1,13 @@
 import torch
-from evaluate import load as load_metric
 from tqdm import tqdm
+from sklearn.metrics import accuracy_score, f1_score
 
 from model import load_model
 from load_eval import load_data
 from load import process_vision_info
+
+import re
+import json
 
 from transformers import AutoProcessor, AutoModelForImageTextToText, BitsAndBytesConfig
 # 配置路径
@@ -16,14 +19,16 @@ root_path = "/root/autodl-tmp/"      # 图像文件根路径
 #model.eval()  # 设为评估模式
 
 import torch
+from peft import PeftModel
 
 # Load Model with PEFT adapter
 model = AutoModelForImageTextToText.from_pretrained(
-  "/root/autodl-tmp/BiMi/",
+  "google/gemma-3-4b-it",
   device_map="auto",
   torch_dtype=torch.bfloat16,
   attn_implementation="eager",
-)
+).eval()
+# model = PeftModel.from_pretrained(base_model, "/root/autodl-tmp/BiMi/").eval()
 processor = AutoProcessor.from_pretrained("/root/autodl-tmp/BiMi/")
 
 
@@ -44,6 +49,39 @@ def generate(sample):
     output_text = processor.batch_decode(generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)
     return output_text[0]
 
+# result 
+def extract(text):
+    # 正则表达式提取 classification 和 bbox（包括 null 情况）
+    pattern = r'<answer>\{\{"classification":\s*"(.+?)",\s*"region":\s*\{"bbox":\s*(null|\[[^\]]*\])\}\}\}</answer>'
+
+    matches = re.findall(pattern, text)
+
+    results = []
+    for classification, bbox_str in matches:
+        if bbox_str == "null":
+            bbox = None
+        else:
+            # 安全解析 bbox 字符串为 float 列表
+            try:
+                bbox = [float(x.strip()) for x in bbox_str.strip('[]').split(',')]
+            except ValueError:
+                bbox = None  # fallback if malformed
+
+        return classification, bbox
+
+def iou(boxA, boxB):
+    if boxA is None or boxB is None:
+        return 0.0
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+    boxAArea = max(0, boxA[2] - boxA[0]) * max(0, boxA[3] - boxA[1])
+    boxBArea = max(0, boxB[2] - boxB[0]) * max(0, boxB[3] - boxB[1])
+    unionArea = boxAArea + boxBArea - interArea
+    return interArea / unionArea if unionArea > 0 else 0.0
+
 # 评估函数（输入：数据集子集）
 def evaluate_model(samples):
     predictions = []
@@ -58,17 +96,26 @@ def evaluate_model(samples):
         print(pred)
         print("--------------------------------------------------")
         predictions.append(pred)
-        references.append(sample["reference"])
+        classification, bbox = extract(text)
+        predictions.append(classification)
+        detections.append(bbox)
+        prediction_ref.append(sample["label"])
+        detections_ref.append(sample["bbox"])
 
-    rouge = load_metric("rouge")
-    results = rouge.compute(predictions=predictions, references=references)
-    return results
+    # 适用于分类任务
+    accuracy = accuracy_score(predictions, prediction_ref)
+    f1 = f1_score(predictions, prediction_ref, average="macro")  # 或 micro, weighted 等
+    # 计算平均IoU
+    ious = [iou(p, r) for p, r in zip(detections, detections_ref)]
+    mean_iou = sum(ious) / len(ious)
+
+    return accuracy, f1, mean_iou
 
 # 从数据集中选择前N个样本作为评估集
-eval_samples = dataset[:50]  # 或使用你自己的 eval_dataset 切分方式
+eval_samples = dataset[2500:]  # 或使用你自己的 eval_dataset 切分方式
 
 # 执行评估
-results = evaluate_model(eval_samples)
+accuracy, f1, mean_iou = evaluate_model(eval_samples)
 
 print("Evaluation Results:")
-print(results)
+print(accuracy, f1, mean_iou)

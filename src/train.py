@@ -32,7 +32,7 @@ trainer.train()
 trainer.save_model()
 
 # Load Model base model
-model_id = "google/gemma-3-4b-pt" # or `google/gemma-3-12b-pt`, `google/gemma-3-27-pt`
+model_id = "google/gemma-3-4b-it" # or `google/gemma-3-12b-pt`, `google/gemma-3-27-pt`
 model = AutoModelForImageTextToText.from_pretrained(model_id, low_cpu_mem_usage=True)
 
 # Merge LoRA and base model and save
