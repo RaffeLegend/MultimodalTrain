@@ -20,13 +20,13 @@ import torch
 from peft import PeftModel
 
 # Load Model with PEFT adapter
-model = AutoModelForImageTextToText.from_pretrained(
+base_model = AutoModelForImageTextToText.from_pretrained(
   "google/gemma-3-4b-it",
   device_map="auto",
   torch_dtype=torch.bfloat16,
   attn_implementation="eager",
-).eval()
-# model = PeftModel.from_pretrained(base_model, "/root/autodl-tmp/BiMi/").eval()
+)
+model = PeftModel.from_pretrained(base_model, "/root/autodl-tmp/BiMi/").eval()
 processor = AutoProcessor.from_pretrained("/root/autodl-tmp/BiMi/")
 
 
