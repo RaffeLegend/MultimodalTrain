@@ -15,8 +15,16 @@ root_path = "/root/autodl-tmp/"      # 图像文件根路径
 import torch
 from intern_utils import split_model, load_image
 from transformers import AutoModel, AutoTokenizer, AutoProcessor
-path = 'OpenGVLab/InternVL3-8B'
-device_map = split_model('InternVL3-8B', path)
+
+
+definition = "Assign one of the following six categories based on their mutual alignment: All Consistent: The image aligns well with both Chinese and English captions. No signs of manipulation or misalignment. Image Manipulated: The image is manipulated. Both captions truthfully describe the manipulated image. Both Misaligned: Both Chinese and English captions are manipulated. Neither caption correctly describes the image. Chinese Misaligned: Only the Chinese caption is manipulated. The English caption aligns correctly with the image. English Misaligned: Only the English caption is manipulated. The Chinese caption aligns correctly with the image. All Inconsistent: The image, Chinese caption, and English caption are all manipulated and mutually inconsistent. "
+
+system_prompt = system_message + definition + user_prompt
+
+user_prompt = "please analyze the <image> with label "
+
+path = 'OpenGVLab/InternVL3-14B'
+device_map = split_model('InternVL3-14B', path)
 model = AutoModel.from_pretrained(
     path,
     torch_dtype=torch.bfloat16,
@@ -32,8 +40,9 @@ processor = AutoProcessor.from_pretrained(path, trust_remote_code=True, use_fast
 def generate(sample):
     # single-image single-round conversation (单图单轮对话)
     pixel_values = load_image(os.path.join(root_path, sample['captioned_path']), max_num=1).to(torch.bfloat16).cuda()
+    label = sample['label']
     generation_config = dict(max_new_tokens=1024, do_sample=True)
-    question = system_message + user_prompt
+    question = system_prompt + user_prompt + label
     response = model.chat(tokenizer, pixel_values, question, generation_config)
     print(f'User: {question}\nAssistant: {response}')
     
@@ -46,7 +55,7 @@ def evaluate_model(ref_samples):
     prediction_ref = []
     detections_ref = []
     
-    for sample in ref_samples[:100]:
+    for sample in ref_samples[:200]:
         print("-------------------------sample------------------")
         print(sample)
         print("-------------------------------------------------")
@@ -80,7 +89,7 @@ def evaluate_model(ref_samples):
 
 # 执行评估
 samples = json.load(open(json_path, 'r', encoding='utf-8'))
-accuracy, f1, mean_iou = evaluate_model(samples[:20])
+accuracy, f1, mean_iou = evaluate_model(samples[:1000])
 
 print("Evaluation Results:")
 print(accuracy, f1, mean_iou)

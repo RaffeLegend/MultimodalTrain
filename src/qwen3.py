@@ -32,7 +32,9 @@ dataset, dataset_json = load_data(json_path, root_path)
 # 生成单条样本描述
 def generate(sample):
     messages = sample['messages']
+    print(messages)
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    print(text)
     image_inputs = process_vision_info(messages)
     inputs = processor(text=[text], images=image_inputs, padding=True, return_tensors="pt").to(model.device)
 
